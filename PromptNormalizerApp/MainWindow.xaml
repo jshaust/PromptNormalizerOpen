@@ -1,0 +1,311 @@
+﻿<!--
+    @description
+    Main window layout using DockPanel with MVVM binding to MainViewModel.
+
+    Key changes for Step 3:
+    1. Bind the Window's Title to a new property in the ViewModel: Title="{Binding WindowTitle}"
+-->
+
+<Window x:Class="PromptBuilderApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:PromptBuilderApp.ViewModels"
+        Title="{Binding WindowTitle}"
+        Width="950"
+        SizeToContent="Height"
+        MaxHeight="{x:Static SystemParameters.PrimaryScreenHeight}"
+        WindowStartupLocation="CenterScreen"
+        Style="{StaticResource ModernWindowStyle}">
+
+    <!-- HierarchicalDataTemplate for DirectoryItemViewModel -->
+    <Window.Resources>
+        <HierarchicalDataTemplate DataType="{x:Type vm:DirectoryItemViewModel}" ItemsSource="{Binding Children}">
+            <StackPanel Orientation="Horizontal">
+                <CheckBox Margin="0,0,5,0" IsChecked="{Binding IsChecked, Mode=TwoWay}"/>
+                <TextBlock Text="{Binding Name}"/>
+            </StackPanel>
+        </HierarchicalDataTemplate>
+    </Window.Resources>
+
+    <!-- Set DataContext to an instance of MainViewModel -->
+    <Window.DataContext>
+        <vm:MainViewModel />
+    </Window.DataContext>
+
+    <DockPanel LastChildFill="True">
+
+        <!-- PROGRESS BAR FOR SCANNING -->
+        <ProgressBar DockPanel.Dock="Top"
+                     Height="5"
+                     Margin="5,0,5,5"
+                     IsIndeterminate="True"
+                     AutomationProperties.Name="Folder Scanning Progress"
+                     Visibility="{Binding IsScanning, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+        <!-- TOP AREA: FOLDER BROWSING -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Vertical" Margin="5">
+            <GroupBox Header="Folder Setup" Margin="0,0,0,5">
+                <StackPanel Orientation="Vertical" Margin="5">
+                    <!-- Folder browsing row -->
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Solution Folder:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <!-- Bound to RootFolder property in ViewModel -->
+                        <TextBox Width="450" Margin="0,0,5,0"
+                                 Text="{Binding RootFolder}"
+                                 IsReadOnly="True"
+                                 AutomationProperties.Name="Solution Folder Path"/>
+                        <!-- Normalized widths for both 'Browse...' and 'Reload Folder' -->
+                        <Button Content="Browse..."
+                                Width="120"
+                                Margin="0,0,15,0"
+                                Command="{Binding BrowseCommand}"
+                                AutomationProperties.Name="Browse for Folder"/>
+                        <Button Content="Reload Folder"
+                                Margin="0,0,15,0"
+                                Width="120"
+                                Command="{Binding ReloadFolderCommand}"
+                                AutomationProperties.Name="Reload Folder"/>
+                    </StackPanel>
+
+                    <!-- Skip folders row -->
+                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                        <TextBlock Text="Skip Folders:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <CheckBox Content="bin" IsChecked="{Binding SkipBin}" Margin="0,0,10,0"/>
+                        <CheckBox Content="obj" IsChecked="{Binding SkipObj}" Margin="0,0,10,0"/>
+                        <CheckBox Content=".vs" IsChecked="{Binding SkipVs}" Margin="0,0,10,0"/>
+                        <CheckBox Content=".git" IsChecked="{Binding SkipGit}" Margin="0,0,10,0"/>
+                        <CheckBox Content="node_modules" IsChecked="{Binding SkipNodeModules}" Margin="0,0,10,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+        </StackPanel>
+
+        <!-- MAIN TABCONTROL -->
+        <TabControl DockPanel.Dock="Top" Margin="5">
+            <!-- TAB 1: METADATA & SETTINGS -->
+            <TabItem Header="Metadata">
+                <DockPanel LastChildFill="True" Margin="10">
+
+                    <!-- Sticky bottom bar -->
+                    <StackPanel DockPanel.Dock="Bottom"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Margin="10">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,200,0">
+                            <Button Content="Clear All Fields"
+                                    Width="130"
+                                    Margin="0,0,10,0"
+                                    Command="{Binding ClearAllFieldsCommand}"
+                                    AutomationProperties.Name="Clear All Fields Button"/>
+                        </StackPanel>
+
+                        <Button Content="Generate Prompt"
+                                Width="130"
+                                Margin="0,0,10,0"
+                                Command="{Binding GeneratePromptCommand}"
+                                AutomationProperties.Name="Generate Prompt Button"/>
+                        <Button Content="Copy to Clipboard"
+                                Width="130"
+                                Margin="0,0,10,0"
+                                Command="{Binding CopyToClipboardCommand}"
+                                AutomationProperties.Name="Copy to Clipboard Button"/>
+                        <TextBlock VerticalAlignment="Center"
+                                   Foreground="Blue"
+                                   Margin="10,0,0,0"
+                                   Text="{Binding TokenEstimate}"/>
+                        <TextBlock Text=""
+                                   Foreground="Green"
+                                   VerticalAlignment="Center"
+                                   Margin="10,0,0,0"
+                                   Visibility="Collapsed"/>
+                    </StackPanel>
+
+                    <!-- Scrollable content -->
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  PanningMode="Both">
+                        <StackPanel Margin="10">
+                            <GroupBox Header="Metadata &amp; Settings">
+                                <StackPanel Margin="5">
+
+                                    <!-- Template Selection -->
+                                    <WrapPanel Margin="0,0,0,10" VerticalAlignment="Center">
+                                        <TextBlock Text="Template:" VerticalAlignment="Center" Margin="10,0,5,0"/>
+                                        <ComboBox Width="160"
+                                                  AutomationProperties.Name="Template Selection"
+                                                  SelectedValuePath="Content"
+                                                  SelectedValue="{Binding SelectedTemplate}">
+                                            <ComboBoxItem Content="None"/>
+                                            <ComboBoxItem Content="Codegen Prompt"/>
+                                            <ComboBoxItem Content="Review Prompt"/>
+                                        </ComboBox>
+                                    </WrapPanel>
+
+                                    <!-- Project Request -->
+                                    <TextBlock Text="Project Request:" FontWeight="Bold"/>
+                                    <TextBox TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             Margin="0,0,0,10"
+                                             Text="{Binding ProjectRequest}"
+                                             AutomationProperties.Name="Project Request Input"/>
+
+                                    <!-- Project Rules -->
+                                    <TextBlock Text="Project Rules:" FontWeight="Bold"/>
+                                    <TextBox TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             Margin="0,0,0,10"
+                                             Text="{Binding ProjectRules}"
+                                             AutomationProperties.Name="Project Rules Input"/>
+
+                                    <!-- Technical Specification -->
+                                    <TextBlock Text="Technical Specification:" FontWeight="Bold"/>
+                                    <TextBox TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             Margin="0,0,0,10"
+                                             Text="{Binding TechnicalSpec}"
+                                             AutomationProperties.Name="Technical Specification Input"/>
+
+                                    <!-- Regex Redaction -->
+                                    <TextBlock Text="Regex Redaction Patterns:" FontWeight="Bold"/>
+                                    <TextBlock Text="(One per line. E.g. (ApiKey=)([^\s]+) => $1[REDACTED])"
+                                               Foreground="Gray" FontStyle="Italic"/>
+                                    <TextBox TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             Margin="0,0,0,10"
+                                             Text="{Binding RegexPatterns}"
+                                             AutomationProperties.Name="Regex Patterns Input"/>
+
+                                    <!-- Chunking & line range -->
+                                    <WrapPanel Margin="0,0,0,10" VerticalAlignment="Center">
+                                        <CheckBox Content="Enable Chunking" Margin="0,0,20,0"
+                                                  IsChecked="{Binding EnableChunkingInFuture}"
+                                                  ToolTip="Demonstration property"
+                                                  AutomationProperties.Name="Enable Chunking Checkbox"/>
+                                        <TextBlock Text="Max Lines per File:" VerticalAlignment="Center"/>
+                                        <TextBox Width="50" Margin="5,0,10,0"
+                                                 Text="{Binding MaxLines}"
+                                                 AutomationProperties.Name="Max Lines Input"/>
+                                        <TextBlock Text="Line Range (start-end):" VerticalAlignment="Center"/>
+                                        <TextBox Width="40" Margin="5,0,0,0"
+                                                 Text="{Binding LineRangeStart}"
+                                                 AutomationProperties.Name="Line Range Start"/>
+                                        <TextBlock Text="-" VerticalAlignment="Center" Margin="3,0,3,0"/>
+                                        <TextBox Width="40" Margin="5,0,0,0"
+                                                 Text="{Binding LineRangeEnd}"
+                                                 AutomationProperties.Name="Line Range End"/>
+                                        <TextBlock Text="(0=No limit)" Margin="5,0,0,0" Foreground="Gray"/>
+                                    </WrapPanel>
+
+                                    <!-- Model selection -->
+                                    <WrapPanel Margin="0,0,0,10" VerticalAlignment="Center">
+                                        <TextBlock Text="Select Model:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                        <ComboBox Width="150"
+                                                  ToolTip="Currently not connected to code"
+                                                  AutomationProperties.Name="Model Selection">
+                                            <ComboBoxItem Content="GPT-4"/>
+                                            <ComboBoxItem Content="GPT-3.5"/>
+                                            <ComboBoxItem Content="o1 Pro"/>
+                                            <ComboBoxItem Content="o3-mini-high"/>
+                                        </ComboBox>
+                                    </WrapPanel>
+
+                                    <!-- Implementation Plan -->
+                                    <TextBlock Text="Implementation Plan:" FontWeight="Bold"/>
+                                    <TextBox TextWrapping="Wrap"
+                                             AcceptsReturn="True"
+                                             Margin="0,0,0,10"
+                                             Text="{Binding ImplementationPlan}"
+                                             AutomationProperties.Name="Implementation Plan Input"/>
+
+                                    <!-- Directory structure -->
+                                    <CheckBox Content="Include Directory Structure"
+                                              IsChecked="{Binding IncludeDirectoryStructure}"
+                                              Margin="0,10,10,30"
+                                              AutomationProperties.Name="Include Directory Structure Checkbox"/>
+                                </StackPanel>
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </TabItem>
+
+            <!-- TAB 2: SELECTION & PREVIEW -->
+            <TabItem Header="Selection &amp; Preview">
+                <DockPanel LastChildFill="True" Margin="10">
+                    <!-- Sticky bottom bar -->
+                    <StackPanel DockPanel.Dock="Bottom"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Margin="10">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,200,0">
+                            <Button Content="Clear All Fields"
+                                    Width="130"
+                                    Margin="0,0,10,0"
+                                    Command="{Binding ClearAllFieldsCommand}"
+                                    AutomationProperties.Name="Clear All Fields Button (Tab2)"/>
+                        </StackPanel>
+
+                        <Button Content="Generate Prompt"
+                                Width="130"
+                                Margin="0,0,10,0"
+                                Command="{Binding GeneratePromptCommand}"
+                                AutomationProperties.Name="Generate Prompt Button (Tab2)"/>
+                        <Button Content="Copy to Clipboard"
+                                Width="130"
+                                Margin="0,0,10,0"
+                                Command="{Binding CopyToClipboardCommand}"
+                                AutomationProperties.Name="Copy to Clipboard Button (Tab2)"/>
+                        <TextBlock VerticalAlignment="Center"
+                                   Foreground="Blue"
+                                   Margin="10,0,0,0"
+                                   Text="{Binding TokenEstimate}"/>
+                        <TextBlock Text=""
+                                   Foreground="Green"
+                                   VerticalAlignment="Center"
+                                   Margin="10,0,0,0"
+                                   Visibility="Collapsed"/>
+                    </StackPanel>
+
+                    <!-- Scrollable content -->
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  PanningMode="Both">
+                        <Grid Margin="5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*"/>
+                                <ColumnDefinition Width="3*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Left side: TreeView with ItemsSource bound to DirectoryItems -->
+                            <TreeView Grid.Row="0"
+                                      Grid.Column="0"
+                                      Margin="5"
+                                      VerticalAlignment="Stretch"
+                                      AutomationProperties.Name="Directory Tree"
+                                      ItemsSource="{Binding DirectoryItems}"/>
+
+                            <!-- Right side: Performance-tuned TextBox for large text selection -->
+                            <TextBox Grid.Row="0"
+                                     Grid.Column="1"
+                                     Margin="5"
+                                     IsReadOnly="True"
+                                     AcceptsReturn="True"
+                                     TextWrapping="NoWrap"
+                                     SpellCheck.IsEnabled="False"
+                                     IsUndoEnabled="False"
+                                     ScrollViewer.CanContentScroll="True"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                     VerticalAlignment="Stretch"
+                                     Text="{Binding OutputPreview}"
+                                     AutomationProperties.Name="Prompt Output Preview"/>
+                        </Grid>
+                    </ScrollViewer>
+                </DockPanel>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>
